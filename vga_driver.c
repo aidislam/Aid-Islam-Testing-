@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <limits.h>
 
 /* VGA text mode memory address */
 #define VGA_MEMORY 0xB8000
@@ -92,7 +93,10 @@ static void vga_scroll_up(void) {
         dst->color = text_color;
     }
     
-    cursor_y--;
+    /* Prevent cursor underflow */
+    if (cursor_y > 0) {
+        cursor_y--;
+    }
 }
 
 /*
@@ -124,7 +128,8 @@ void vga_putchar(char c) {
     }
     
     if (c == '\t') {
-        cursor_x += 4;
+        /* Align to next tab stop (4-byte boundary) */
+        cursor_x = (cursor_x + 4) & ~3;
         if (cursor_x >= VGA_WIDTH) {
             vga_newline();
         }
@@ -168,8 +173,12 @@ void vga_set_color(uint8_t foreground, uint8_t background) {
  * Get current cursor position
  */
 void vga_get_cursor(uint16_t* x, uint16_t* y) {
-    *x = cursor_x;
-    *y = cursor_y;
+    if (x != NULL) {
+        *x = cursor_x;
+    }
+    if (y != NULL) {
+        *y = cursor_y;
+    }
 }
 
 /*
@@ -193,14 +202,19 @@ void vga_print_int(int32_t num) {
     
     if (num < 0) {
         vga_putchar('-');
+        /* Handle INT32_MIN special case to prevent overflow */
+        if (num == INT32_MIN) {
+            vga_puts("2147483648");
+            return;
+        }
         num = -num;
     }
     
     /* Get digits in reverse order */
-    char buffer[16];
+    char buffer[16] = {0};
     int index = 0;
     
-    while (num > 0) {
+    while (num > 0 && index < 15) {
         buffer[index++] = '0' + (num % 10);
         num /= 10;
     }
