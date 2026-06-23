@@ -20,17 +20,16 @@ jobs:
         sudo apt-get install -y build-essential nasm
 
     - name: Setup i686-elf-gcc Cross-Compiler
-      # এটি সরাসরি একটি ডেডিকেটেড গিটহাব অ্যাকশন ব্যবহার করে i686-elf-gcc টুলচেইন সেটআপ করবে
-      uses: niw/setup-i686-elf-gcc-action@v1
+      # এটি গিটহাবের সবচেয়ে জনপ্রিয় এবং আপ-টু-ডেট ক্রোস-কম্পাইলার অ্যাকশন
+      uses: caorandis/setup-i686-elf-gcc@v1
 
     - name: Clean Previous Builds
       run: |
-        # আগের কোনো বিল্ড ফাইল থাকলে তা পরিষ্কার করবে
         make clean || true
 
     - name: Compile and Build OS Image
       run: |
-        # এবার i686-elf-gcc সম্পূর্ণ রেডি, তাই 'make' সফলভাবে রান হবে
+        # i686-elf-gcc সফলভাবে সেটআপ হওয়ার পর 'make' রান হবে
         make
 
     - name: Check Built Files (Diagnostics)
