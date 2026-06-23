@@ -17,15 +17,14 @@ jobs:
     - name: Install NASM and Multi-lib Build Tools
       run: |
         sudo apt-get update
-        # gcc-multilib ইনস্টল করলে স্ট্যান্ডার্ড gcc দিয়েই ৩২-বিট ওএস কম্পাইল করা সম্ভব
         sudo apt-get install -y build-essential nasm gcc-multilib
 
-    - name: Setup i686-elf-gcc Alias (Fix Makefile)
+    - name: Setup i686-elf Toolchain Alias (Fix Makefile)
       run: |
-        # আপনার Makefile যেহেতু 'i686-elf-gcc' এবং 'i686-elf-ld' খোঁজে,
-        # আমরা সিস্টেমের ৩-বিট কম্পাইলারকে সেটির সাথে লিংক (Alias) করে দিচ্ছি।
+        # আপনার Makefile-এ ব্যবহৃত সবকটি টুলের জন্য উবুন্টুর অফিশিয়াল পাথের সাথে সিমলিংক তৈরি করা হলো
         sudo ln -s /usr/bin/gcc /usr/bin/i686-elf-gcc
         sudo ln -s /usr/bin/ld /usr/bin/i686-elf-ld
+        sudo ln -s /usr/bin/objcopy /usr/bin/i686-elf-objcopy
 
     - name: Clean Previous Builds
       run: |
@@ -33,7 +32,7 @@ jobs:
 
     - name: Compile and Build OS Image
       run: |
-        # এবার আপনার Makefile কোনো থার্ড-পার্টি অ্যাকশন ছাড়াই রান হবে
+        # এবার objcopy সহ সব টুল রেডি, তাই ওএস সম্পূর্ণ বিল্ড হবে
         make
 
     - name: Check Built Files (Diagnostics)
@@ -48,4 +47,4 @@ jobs:
           *.bin
           *.iso
           *.img
-          *.o
+          *.elf
