@@ -35,7 +35,7 @@ boot_start:
     mov ch, 0               ; Cylinder 0
     mov cl, 2               ; Start at sector 2 (bootloader is sector 1)
     mov dh, 0               ; Head 0
-    mov dl, 0x80            ; Drive 0 (first hard drive)
+    mov dl, 0x00            ; Fixed: Set to 0x00 for First Floppy Drive (Emulator Support)
     int 0x13
     
     jc disk_error           ; Jump if carry flag set (error)
@@ -123,8 +123,6 @@ gdt_start:
     dq 0
     
     ; Code segment descriptor
-    ; Base: 0x00000000, Limit: 0xFFFFF
-    ; Flags: 4K granularity, 32-bit protected mode, execute/read
     dw 0xFFFF               ; Limit (low 16 bits)
     dw 0x0000               ; Base (low 16 bits)
     db 0x00                 ; Base (middle 8 bits)
@@ -133,8 +131,6 @@ gdt_start:
     db 0x00                 ; Base (high 8 bits)
     
     ; Data segment descriptor
-    ; Base: 0x00000000, Limit: 0xFFFFF
-    ; Flags: 4K granularity, 32-bit, read/write
     dw 0xFFFF               ; Limit (low 16 bits)
     dw 0x0000               ; Base (low 16 bits)
     db 0x00                 ; Base (middle 8 bits)
@@ -171,7 +167,6 @@ pm_entry:
     hlt
 
 ; ============= PADDING AND BOOT SIGNATURE =============
-
-; Pad bootloader to 510 bytes, then add boot signature
 times 510 - ($ - $$) db 0
-dw 0xAA55               ; Boot signature (required by BIOS)
+dw 0xAA55               ; Boot signature
+
