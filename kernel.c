@@ -77,6 +77,10 @@ void scroll_screen(void)
 /* Print a string */
 void print(const char *str)
 {
+    if (str == NULL) {
+        return;
+    }
+    
     int i = 0;
     while (str[i] != '\0') {
         putchar(str[i]);
@@ -97,12 +101,19 @@ void print_int(int num)
         return;
     }
     
-    char buffer[32];
+    char buffer[32] = {0};
     int index = 0;
     
-    while (num > 0) {
+    /* Buffer overflow protection */
+    while (num > 0 && index < 31) {
         buffer[index++] = '0' + (num % 10);
         num /= 10;
+    }
+    
+    /* Handle overflow case */
+    if (num > 0) {
+        print("ERROR: Number too large");
+        return;
     }
     
     while (index > 0) {
