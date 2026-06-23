@@ -45,12 +45,10 @@ $(KERNEL_BIN): $(KERNEL_ELF)
 
 # Create OS image (bootloader + kernel)
 $(OS_IMAGE): $(BOOTLOADER) $(KERNEL_BIN)
+	# Combines bootloader and kernel directly into one image
 	cat $(BOOTLOADER) $(KERNEL_BIN) > $@
-	# Pad to 1.44MB floppy size (optional)
-	dd if=/dev/zero bs=1024 count=1440 2>/dev/null | tr '\0' '\377' > temp.img
-	dd if=$@ of=temp.img bs=512 count=1 conv=notrunc 2>/dev/null
-	dd if=$(KERNEL_BIN) of=temp.img bs=512 seek=1 conv=notrunc 2>/dev/null
-	mv temp.img $@
+	# Pad to standard 1.44MB floppy size safely
+	truncate -s 1440k $@
 
 # Run in QEMU
 run: $(OS_IMAGE)
