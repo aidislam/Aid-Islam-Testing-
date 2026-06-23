@@ -14,14 +14,18 @@ jobs:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Install NASM and Build Tools
+    - name: Install NASM and Multi-lib Build Tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential nasm
+        # gcc-multilib ইনস্টল করলে স্ট্যান্ডার্ড gcc দিয়েই ৩২-বিট ওএস কম্পাইল করা সম্ভব
+        sudo apt-get install -y build-essential nasm gcc-multilib
 
-    - name: Setup i686-elf-gcc Cross-Compiler
-      # এটি গিটহাবের সবচেয়ে জনপ্রিয় এবং আপ-টু-ডেট ক্রোস-কম্পাইলার অ্যাকশন
-      uses: caorandis/setup-i686-elf-gcc@v1
+    - name: Setup i686-elf-gcc Alias (Fix Makefile)
+      run: |
+        # আপনার Makefile যেহেতু 'i686-elf-gcc' এবং 'i686-elf-ld' খোঁজে,
+        # আমরা সিস্টেমের ৩-বিট কম্পাইলারকে সেটির সাথে লিংক (Alias) করে দিচ্ছি।
+        sudo ln -s /usr/bin/gcc /usr/bin/i686-elf-gcc
+        sudo ln -s /usr/bin/ld /usr/bin/i686-elf-ld
 
     - name: Clean Previous Builds
       run: |
@@ -29,7 +33,7 @@ jobs:
 
     - name: Compile and Build OS Image
       run: |
-        # i686-elf-gcc সফলভাবে সেটআপ হওয়ার পর 'make' রান হবে
+        # এবার আপনার Makefile কোনো থার্ড-পার্টি অ্যাকশন ছাড়াই রান হবে
         make
 
     - name: Check Built Files (Diagnostics)
