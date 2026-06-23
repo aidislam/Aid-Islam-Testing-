@@ -1,28 +1,19 @@
 /* Simple 32-bit Kernel in C */
 
-// ১. NULL এররটি ফিক্স করার জন্য এটি যোগ করুন
 #ifndef NULL
 #define NULL ((void*)0)
 #endif
 
-// ২. implicit declaration এররটি ফিক্স করার জন্য ফাংশনের প্রোটোটাইপ উপরে ডিক্লেয়ার করুন
 void scroll_screen(void); 
-
-// --- এর নিচে আপনার বাকি কোড যেভাবে আছে সেভাবেই থাকবে ---
-// যেমন: 
-// void putchar(char c) { ... }
-// void scroll_screen(void) { ... }
-/* Simple 32-bit Kernel in C */
 
 /* VGA Video Memory */
 #define VIDEO_MEMORY 0xB8000
 #define MAX_ROWS 25
 #define MAX_COLS 80
 
-/* VGA Colors */
-#define BLACK 0
-#define WHITE 15
-#define GREEN 2
+/* VGA Colors (Fixed Attributes) */
+#define WHITE_ON_BLACK 0x0F  // White text on Black background
+#define GREEN_ON_BLACK 0x0A  // Green text on Black background
 
 /* Current cursor position */
 static int cursor_row = 0;
@@ -47,8 +38,7 @@ void putchar(char c)
     } else if (c == '\r') {
         cursor_col = 0;
     } else {
-        write_char(c, cursor_row, cursor_col, 
-                  (WHITE << 4) | BLACK);   /* White text on black background */
+        write_char(c, cursor_row, cursor_col, WHITE_ON_BLACK);
         cursor_col++;
     }
     
@@ -83,8 +73,7 @@ void scroll_screen(void)
     
     /* Clear the last row */
     for (col = 0; col < MAX_COLS; col++) {
-        write_char(' ', MAX_ROWS - 1, col, 
-                  (WHITE << 4) | BLACK);
+        write_char(' ', MAX_ROWS - 1, col, WHITE_ON_BLACK);
     }
 }
 
@@ -118,13 +107,11 @@ void print_int(int num)
     char buffer[32] = {0};
     int index = 0;
     
-    /* Buffer overflow protection */
     while (num > 0 && index < 31) {
         buffer[index++] = '0' + (num % 10);
         num /= 10;
     }
     
-    /* Handle overflow case */
     if (num > 0) {
         print("ERROR: Number too large");
         return;
@@ -138,6 +125,10 @@ void print_int(int num)
 /* Main kernel entry point */
 void main(void)
 {
+    /* Clear compiler warnings by forcing initial reset */
+    cursor_row = 0;
+    cursor_col = 0;
+
     /* Print welcome message */
     print("Hello OS\n");
     print("\nWelcome to Simple 32-bit OS!\n");
@@ -155,6 +146,6 @@ void main(void)
     
     /* Infinite loop - kernel keeps running */
     while (1) {
-        asm("hlt");  /* Halt CPU until next interrupt */
+        __asm__ __volatile__("hlt");
     }
 }
