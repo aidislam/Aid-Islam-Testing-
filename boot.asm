@@ -31,7 +31,7 @@ boot_start:
     xor bx, bx              ; es:bx = destination
     
     mov ah, 0x02            ; BIOS read sectors function
-    mov al, 4               ; Read 4 sectors (2KB)
+    mov al, 8               ; Read 8 sectors to be safe
     mov ch, 0               ; Cylinder 0
     mov cl, 2               ; Start at sector 2 (bootloader is sector 1)
     mov dh, 0               ; Head 0
@@ -67,8 +67,6 @@ disk_error:
     
 ; ============= 16-BIT REAL MODE FUNCTIONS =============
 
-; Print string in 16-bit mode
-; Input: ds:si = string pointer
 print_string_16:
 .loop:
     lodsb                   ; Load byte from [ds:si] into al, increment si
@@ -82,31 +80,21 @@ print_string_16:
 .done:
     ret
 
-; Enable A20 line using keyboard controller
 enable_a20:
     cli
-    
-    ; Disable keyboard
     mov al, 0xAD
     out 0x64, al
-    
-    ; Read current output port
     mov al, 0xD0
     out 0x64, al
     in al, 0x60
     push ax
-    
-    ; Write output port with A20 enabled
     mov al, 0xD1
     out 0x64, al
     pop ax
     or al, 0x02             ; Set A20 bit
     out 0x60, al
-    
-    ; Enable keyboard
     mov al, 0xAE
     out 0x64, al
-    
     sti
     ret
 
@@ -119,30 +107,26 @@ error_msg: db "Disk error!", 0x0D, 0x0A, 0
 ; ============= GDT (Global Descriptor Table) =============
 
 gdt_start:
-    ; Null descriptor (required)
     dq 0
-    
-    ; Code segment descriptor
-    dw 0xFFFF               ; Limit (low 16 bits)
-    dw 0x0000               ; Base (low 16 bits)
-    db 0x00                 ; Base (middle 8 bits)
-    db 0x9A                 ; Flags: Present, Privilege 0, Code, Execute/Read
-    db 0xCF                 ; Flags: 4KB granularity, 32-bit
-    db 0x00                 ; Base (high 8 bits)
-    
-    ; Data segment descriptor
-    dw 0xFFFF               ; Limit (low 16 bits)
-    dw 0x0000               ; Base (low 16 bits)
-    db 0x00                 ; Base (middle 8 bits)
-    db 0x92                 ; Flags: Present, Privilege 0, Data, Read/Write
-    db 0xCF                 ; Flags: 4KB granularity, 32-bit
-    db 0x00                 ; Base (high 8 bits)
-
+gdt_code:
+    dw 0xFFFF               
+    dw 0x0000               
+    db 0x00                 
+    db 0x9A                 
+    db 0xCF                 
+    db 0x00                 
+gdt_data:
+    dw 0xFFFF               
+    dw 0x0000               
+    db 0x00                 
+    db 0x92                 
+    db 0xCF                 
+    db 0x00                 
 gdt_end:
 
 gdt_descriptor:
-    dw gdt_end - gdt_start - 1  ; Size of GDT
-    dd gdt_start                 ; Address of GDT
+    dw gdt_end - gdt_start - 1  
+    dd gdt_start                 
 
 ; ============= 32-BIT PROTECTED MODE ENTRY =============
 
@@ -150,7 +134,7 @@ gdt_descriptor:
 
 pm_entry:
     ; Set up data segment selectors
-    mov ax, 0x10            ; Data segment selector
+    mov ax, 0x10            ; Data segment selector (gdt_data offset)
     mov ds, ax
     mov es, ax
     mov fs, ax
@@ -160,13 +144,14 @@ pm_entry:
     ; Set up stack
     mov esp, 0x90000
     
-    ; Call kernel
-    call 0x10000
+    ; FIXED: সরাসরি ebx রেজিস্টারে Absolute Address নিয়ে কল করা হলো
+    mov ebx, 0x10000
+    call ebx
     
     ; Halt if kernel returns
     hlt
 
 ; ============= PADDING AND BOOT SIGNATURE =============
 times 510 - ($ - $$) db 0
-dw 0xAA55               ; Boot signature
+dw 0xAA55               
 
