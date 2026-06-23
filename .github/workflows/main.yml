@@ -1,0 +1,28 @@
+name: C++ Code Compiler (OS/Software Build)
+
+on:
+  push:
+    branches: [ "main" ] # যখনই মেইন ব্রাঞ্চে কোড পুশ করবেন
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # গিটহাবের ফ্রি লিনাক্স সার্ভারে রান হবে
+
+    steps:
+    - name: Checkout repository code
+      uses: actions/checkout@v4
+
+    - name: Install Compiler (GCC/G++)
+      run: sudo apt-get update && sudo apt-get install -y build-essential
+
+    - name: Compile C++ Code to Machine File
+      run: |
+        # আপনার মূল ফাইলের নাম অনুযায়ী নিচের লাইনটি পরিবর্তন করতে পারেন
+        g++ main.cpp -o my_machine_code.bin 
+
+    - name: Upload Finished Machine File
+      uses: actions/upload-artifact@v4
+      with:
+        name: Compiled-Output
+        path: my_machine_code.bin
+
