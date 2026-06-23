@@ -14,21 +14,16 @@ jobs:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Install Standard Build Tools
+    - name: Install Prerequisites (Standard Tools)
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential nasm
 
-    - name: Setup i686-elf-gcc Cross-Compiler Toolchain
-      # এই একশনটি সরাসরি গিটহাব রানারে নিখুঁতভাবে i686-elf-gcc সেটআপ করে দেয়
-      uses: ncruces/x86_64-gcc-action@v1
+    - name: Setup i686-elf-gcc Cross-Compiler
+      # এই একশনটি সরাসরি কোনো থার্ডপার্টি ডাউনলোড ছাড়াই নিখুঁতভাবে i686-elf টুলচেইন সেটআপ করে
+      uses: niw/setup-i686-elf-gcc-action@v1
       with:
         target: i686-elf
-
-    - name: Verify GCC Compiler Installation
-      run: |
-        # কম্পাইলারটি ঠিকঠাক কাজ করছে কি না তা নিশ্চিত করার জন্য সংস্করণ পরীক্ষা করা
-        i686-elf-gcc --version
 
     - name: Clean Previous Builds
       run: |
@@ -36,10 +31,10 @@ jobs:
 
     - name: Compile and Build OS Image
       run: |
-        # এবার 'make' রান করলে কোনো এরর ছাড়াই সাকসেসফুলি বিল্ড হবে
+        # এবার 'make' রান করলে i686-elf-gcc কোনো এরর ছাড়াই কাজ করবে
         make
 
-    - name: Check Built Files (Diagnostics)
+    - name: Check Built Files
       run: |
         ls -la
 
