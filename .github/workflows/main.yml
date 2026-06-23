@@ -1,4 +1,4 @@
-name: Build 32-bit OS
+name: Build 32-bit OS with Cross-Compiler
 
 on:
   push:
@@ -14,34 +14,42 @@ jobs:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Install Prerequisites (GCC, NASM, Make)
+    - name: Install Prerequisites (Standard Tools)
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential nasm
 
+    - name: Install i686-elf-gcc Cross-Compiler
+      run: |
+        # গিটহাবের সার্ভারে দ্রুত i686-elf-gcc টুলচেইন সেটআপ করার জন্য এটি একটি প্রি-বিল্ড প্যাকেজ ডাউনলোড করবে
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+        sudo apt-get update
+        
+        # বিকল্প এবং সবচেয়ে নিরাপদ উপায়: একটি রেডিমেড i686-elf-gcc বাইনারি টুল ডাউনলোড ও পাথ (PATH) সেটআপ করা
+        curl -L -o gcc-cross.tar.gz https://github.com/lordmilko/i686-elf-tools/releases/download/v7.1.0/i686-elf-tools-linux.tar.gz
+        tar -xzf gcc-cross.tar.gz
+        # ডাউনলোড করা কম্পাইলারটিকে গিটহাবের সিস্টেম পাথে যুক্ত করা যাতে 'make' কমান্ড এটিকে খুঁজে পায়
+        echo "$(pwd)/bin" >> $GITHUB_PATH
+
     - name: Clean Previous Builds
       run: |
-        # যদি আপনার Makefile-এ clean রুল থাকে, তবে এটি আগের জেনারেট হওয়া ফাইল মুছে দেবে
         make clean || true
 
     - name: Compile and Build OS Image
       run: |
-        # এটি সরাসরি আপনার Makefile রান করবে এবং পুরো ওএস বিল্ড করবে
+        # এবার 'make' রান করলে i686-elf-gcc সফলভাবে কাজ করবে
         make
 
     - name: Check Built Files
       run: |
-        # বিল্ড শেষে কী কী ফাইল তৈরি হলো তা দেখার জন্য (ডায়াগনস্টিকস)
         ls -la
 
     - name: Upload OS Binary Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: Simple-32bit-OS-Image
-        # আপনার Makefile বিল্ড শেষে যে ফাইনাল ফাইলটি তৈরি করে (যেমন: os-image.bin বা kernel.bin), 
-        # সেটি যদি নির্দিষ্ট কোনো নামে বা ফোল্ডারে থাকে তবে নিচের স্টার (*) চিহ্নের জায়গায় সেই নামটি লিখে দিতে পারেন।
-        # আপাতত এটি বিল্ড হওয়া সব প্রয়োজনীয় ফাইল আপলোড করবে।
         path: |
           *.bin
           *.iso
           *.img
+          *.o
