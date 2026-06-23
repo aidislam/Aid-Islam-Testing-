@@ -13,7 +13,6 @@ LDFLAGS = -T linker.ld -m elf_i386
 
 # Output files
 BOOTLOADER = boot.bin
-KERNEL_OBJ = kernel.o kernel_asm.o
 KERNEL_ELF = kernel.elf
 KERNEL_BIN = kernel.bin
 OS_IMAGE = os.img
@@ -27,7 +26,7 @@ all: $(OS_IMAGE)
 $(BOOTLOADER): boot.asm
 	$(AS) -f bin -o $@ $<
 
-# Build kernel assembly
+# Build kernel assembly (Entry Point)
 kernel_asm.o: kernel.asm
 	$(AS) $(ASFLAGS) -o $@ $<
 
@@ -35,9 +34,9 @@ kernel_asm.o: kernel.asm
 kernel.o: kernel.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-# Link kernel
+# Link kernel (CRITICAL FIXED: Assembly entry point MUST be listed first)
 $(KERNEL_ELF): kernel_asm.o kernel.o
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS) -o $@ kernel_asm.o kernel.o
 
 # Convert kernel ELF to binary
 $(KERNEL_BIN): $(KERNEL_ELF)
@@ -45,9 +44,7 @@ $(KERNEL_BIN): $(KERNEL_ELF)
 
 # Create OS image (bootloader + kernel)
 $(OS_IMAGE): $(BOOTLOADER) $(KERNEL_BIN)
-	# Combines bootloader and kernel directly into one image
 	cat $(BOOTLOADER) $(KERNEL_BIN) > $@
-	# Pad to standard 1.44MB floppy size safely
 	truncate -s 1440k $@
 
 # Run in QEMU
@@ -61,8 +58,7 @@ debug: $(OS_IMAGE)
 
 # Clean build files
 clean:
-	rm -f $(BOOTLOADER) $(KERNEL_ELF) $(KERNEL_BIN) $(KERNEL_OBJ) $(OS_IMAGE)
-	rm -f *.o *.elf *.bin *.img
+	rm -f $(BOOTLOADER) $(KERNEL_ELF) $(KERNEL_BIN) *.o *.elf *.bin *.img $(OS_IMAGE)
 
 # Help target
 help:
