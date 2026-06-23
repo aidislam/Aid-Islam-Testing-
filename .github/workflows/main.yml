@@ -1,62 +1,47 @@
-name: C++ Code Compiler (OS/Software Build)
+name: Build 32-bit OS
 
 on:
   push:
-    branches: [ "main" ] # যখনই মেইন ব্রাঞ্চে কোড পুশ করবেন
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest # গিটহাবের ফ্রি লিনাক্স সার্ভারে রান হবে
+  build-os:
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository code
+    - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Show workspace
+    - name: Install Prerequisites (GCC, NASM, Make)
       run: |
-        echo "Working dir: $PWD"
+        sudo apt-get update
+        sudo apt-get install -y build-essential nasm
+
+    - name: Clean Previous Builds
+      run: |
+        # যদি আপনার Makefile-এ clean রুল থাকে, তবে এটি আগের জেনারেট হওয়া ফাইল মুছে দেবে
+        make clean || true
+
+    - name: Compile and Build OS Image
+      run: |
+        # এটি সরাসরি আপনার Makefile রান করবে এবং পুরো ওএস বিল্ড করবে
+        make
+
+    - name: Check Built Files
+      run: |
+        # বিল্ড শেষে কী কী ফাইল তৈরি হলো তা দেখার জন্য (ডায়াগনস্টিকস)
         ls -la
 
-    - name: Install Compiler (GCC/G++)
-      run: sudo apt-get update && sudo apt-get install -y build-essential
-
-    - name: Compile C++ Code to Machine File
-      run: |
-        set -e
-        # root এ .cpp ফাইল আছে কিনা চেক করব
-        CPP_FILES=$(ls *.cpp 2>/dev/null || true)
-        if [ -z "$CPP_FILES" ]; then
-          echo "ERROR: No .cpp files found in the repository. Make sure your source files (e.g. main.cpp) are in the repo root or update the workflow 'path' or working-directory."
-          exit 1
-        fi
-        echo "Compiling: $CPP_FILES"
-        g++ -std=c++17 -O2 -Wall $CPP_FILES -o my_machine_code.bin
-
-    - name: Upload Finished Machine File
+    - name: Upload OS Binary Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Compiled-Output
-        path: my_machine_code.bin
-``` ````
-
-তিনটি সহজ পথ যা আপনি নিতে পারেন
-1) GitHub ওয়েব-ইন্টারফেসে দ্রুত (সবচেয়ে সহজ)
-   - রিপো → .github/workflows/main.yml → Edit → সামগ্রিক কন্টেন্ট প্রতিস্থাপন → Commit changes
-
-2) লোকালভাবে git করে (নির্ভুল)
-   - git clone git@github.com:aidislam/Aid-Islam-Testing-.git
-   - cd Aid-Islam-Testing-
-   - git checkout -b fix/workflow-cpp
-   - (তাইলে ফাইলটি .github/workflows/main.yml থেকে প্রতিস্থাপন করুন)
-   - git add .github/workflows/main.yml
-   - git commit -m "Fix workflow: add diagnostics and robust C++ compile step"
-   - git push --set-upstream origin fix/workflow-cpp
-   - gh pr create --title "Fix C++ workflow" --body "Adds diagnostics and robust compile step"   (অথবা GitHub এ ব্রাঞ্চ থেকে PR তৈরি করুন)
-
-3) আমাকে আবার চেষ্টা করতে বলুন (আমি করলে) — শর্ত: আপনি আমাকে রিপোতে লেখার অনুমতি দেবেন। অনুমতি দেবার পর আমি একই পরিবর্তনটি commit/PR করে দেব। আপনি যদি চান কিভাবে অনুমতি দিতে হবে আমি বলব — সাধারণভাবে আপনাকে Settings → Collaborators and teams বা Install a GitHub App/Integration মারফত সার্ভিস অ্যাকাউন্টকে Write access দিতে হবে।
-
-লগ ও ত্রুটির দ্রুত টিপস
-- আপনি Actions পেজে run খুলে দেখতে পারেন কোন স্টেপ ফেল করেছে: https://github.com/aidislam/Aid-Islam-Testing-/actions/runs/28043897883
-- এই workflow-এ আগে থেকেই কোন .cpp ফাইল না থাকলে compile ধাপে ERROR দেখাবে — তাই যেগুলো সোর্স আছে সেগুলো রিপোতে ঠিক জায়গায় আছে কিনা নিশ্চিত করুন (root বা সাবডিরেক্টরি হলে workflow-এ working-directory ঠিক করুন)।
-
-আপনি কীভাবে এগোতে চান — (A) আমি এখনই রিপোতে commit/PR করতে পুনরায় চেষ্টা করছি যদি আপনি লেখার অনুমতি দিন, (B) আপনি নিজে ম্যানুয়ালি apply করবেন এবং আমি পরে রিভিউ করব, অথবা (C) আপনি বলুন আমি কীভাবে আপনাকে সাহায্য করব (আমি বিস্তারিত কমান্ড/সিনারিও দেব)।
+        name: Simple-32bit-OS-Image
+        # আপনার Makefile বিল্ড শেষে যে ফাইনাল ফাইলটি তৈরি করে (যেমন: os-image.bin বা kernel.bin), 
+        # সেটি যদি নির্দিষ্ট কোনো নামে বা ফোল্ডারে থাকে তবে নিচের স্টার (*) চিহ্নের জায়গায় সেই নামটি লিখে দিতে পারেন।
+        # আপাতত এটি বিল্ড হওয়া সব প্রয়োজনীয় ফাইল আপলোড করবে।
+        path: |
+          *.bin
+          *.iso
+          *.img
