@@ -1,5 +1,19 @@
 /* Simple 32-bit Kernel in C */
 
+// ১. NULL এররটি ফিক্স করার জন্য এটি যোগ করুন
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
+// ২. implicit declaration এররটি ফিক্স করার জন্য ফাংশনের প্রোটোটাইপ উপরে ডিক্লেয়ার করুন
+void scroll_screen(void); 
+
+// --- এর নিচে আপনার বাকি কোড যেভাবে আছে সেভাবেই থাকবে ---
+// যেমন: 
+// void putchar(char c) { ... }
+// void scroll_screen(void) { ... }
+/* Simple 32-bit Kernel in C */
+
 /* VGA Video Memory */
 #define VIDEO_MEMORY 0xB8000
 #define MAX_ROWS 25
