@@ -1,4 +1,4 @@
-name: Build 32-bit OS with Cross-Compiler
+name: Build 32-bit OS
 
 on:
   push:
@@ -14,27 +14,26 @@ jobs:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Install Prerequisites (Standard Tools)
+    - name: Install NASM and Build Tools
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential nasm
 
     - name: Setup i686-elf-gcc Cross-Compiler
-      # এই একশনটি সরাসরি কোনো থার্ডপার্টি ডাউনলোড ছাড়াই নিখুঁতভাবে i686-elf টুলচেইন সেটআপ করে
+      # এটি সরাসরি একটি ডেডিকেটেড গিটহাব অ্যাকশন ব্যবহার করে i686-elf-gcc টুলচেইন সেটআপ করবে
       uses: niw/setup-i686-elf-gcc-action@v1
-      with:
-        target: i686-elf
 
     - name: Clean Previous Builds
       run: |
+        # আগের কোনো বিল্ড ফাইল থাকলে তা পরিষ্কার করবে
         make clean || true
 
     - name: Compile and Build OS Image
       run: |
-        # এবার 'make' রান করলে i686-elf-gcc কোনো এরর ছাড়াই কাজ করবে
+        # এবার i686-elf-gcc সম্পূর্ণ রেডি, তাই 'make' সফলভাবে রান হবে
         make
 
-    - name: Check Built Files
+    - name: Check Built Files (Diagnostics)
       run: |
         ls -la
 
