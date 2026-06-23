@@ -14,22 +14,21 @@ jobs:
     - name: Checkout Repository Code
       uses: actions/checkout@v4
 
-    - name: Install Prerequisites (Standard Tools)
+    - name: Install Standard Build Tools
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential nasm
 
-    - name: Install i686-elf-gcc Cross-Compiler
+    - name: Setup i686-elf-gcc Cross-Compiler Toolchain
+      # এই একশনটি সরাসরি গিটহাব রানারে নিখুঁতভাবে i686-elf-gcc সেটআপ করে দেয়
+      uses: ncruces/x86_64-gcc-action@v1
+      with:
+        target: i686-elf
+
+    - name: Verify GCC Compiler Installation
       run: |
-        # গিটহাবের সার্ভারে দ্রুত i686-elf-gcc টুলচেইন সেটআপ করার জন্য এটি একটি প্রি-বিল্ড প্যাকেজ ডাউনলোড করবে
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-        sudo apt-get update
-        
-        # বিকল্প এবং সবচেয়ে নিরাপদ উপায়: একটি রেডিমেড i686-elf-gcc বাইনারি টুল ডাউনলোড ও পাথ (PATH) সেটআপ করা
-        curl -L -o gcc-cross.tar.gz https://github.com/lordmilko/i686-elf-tools/releases/download/v7.1.0/i686-elf-tools-linux.tar.gz
-        tar -xzf gcc-cross.tar.gz
-        # ডাউনলোড করা কম্পাইলারটিকে গিটহাবের সিস্টেম পাথে যুক্ত করা যাতে 'make' কমান্ড এটিকে খুঁজে পায়
-        echo "$(pwd)/bin" >> $GITHUB_PATH
+        # কম্পাইলারটি ঠিকঠাক কাজ করছে কি না তা নিশ্চিত করার জন্য সংস্করণ পরীক্ষা করা
+        i686-elf-gcc --version
 
     - name: Clean Previous Builds
       run: |
@@ -37,10 +36,10 @@ jobs:
 
     - name: Compile and Build OS Image
       run: |
-        # এবার 'make' রান করলে i686-elf-gcc সফলভাবে কাজ করবে
+        # এবার 'make' রান করলে কোনো এরর ছাড়াই সাকসেসফুলি বিল্ড হবে
         make
 
-    - name: Check Built Files
+    - name: Check Built Files (Diagnostics)
       run: |
         ls -la
 
